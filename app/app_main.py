@@ -5,10 +5,10 @@ import plotly.io as pio
 from itertools import islice
 from plotly.subplots import make_subplots
 
-data = pd.read_csv("candle_data.csv")
-tickers = pd.read_csv("tickers_list.csv")
-financial = pd.read_csv("financial_data.csv")
-valuations = pd.read_csv("valuations_data.csv")
+data = pd.read_csv("data/candle_data.csv")
+tickers = pd.read_csv("data/tickers_list.csv")
+financial = pd.read_csv("data/financial_data.csv")
+valuations = pd.read_csv("data/valuations_data.csv")
 
 # Getting the symbols
 symbols = data['Symbol'].unique()
