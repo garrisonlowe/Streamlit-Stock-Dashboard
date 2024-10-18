@@ -45,6 +45,19 @@ def custom_metric(label, value):
         """,
         unsafe_allow_html=True
     )
+    
+def custom_metric_two(label, value):
+    st.markdown(
+        f"""
+        <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%;">
+            <div style="font-size: 20px; margin-bottom: 8px; padding-top: 35px;">
+                <strong>{label}</strong><br>
+                {value}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 # Function to display the metrics
 def display_metrics(selected_data, financial, valuations):
@@ -84,11 +97,11 @@ def display_df(selected_data, selected_period, selected_symbol):
         st.dataframe(selected_data, use_container_width=True)
 
 # Function to display the info cards        
-def info_cards(selected_data, selected_period, financial, selected_symbol):
+def info_cards(selected_data, selected_period, financial):
     # selected_valuation = valuations[valuations['Symbol'] == selected_data['Symbol'].iloc[0]]
     # st.title(f"{selected_valuation['longName'].iloc[0]}")
     with st.container():
-        left_column, right_column = st.columns([1, 1])
+        left_column,  col1, col2, col3, col4, col5 = st.columns([1,3,1,1,1,1])
         
         selected_data = selected_data.iloc[-mapping_period[selected_period]:]
         
@@ -98,6 +111,10 @@ def info_cards(selected_data, selected_period, financial, selected_symbol):
         initial_price = selected_data['Close'].iloc[0]
         price_difference = current_price - initial_price
         price_diff_percentage = (price_difference / initial_price) * 100
+        highest_price = selected_data['High'].max()
+        lowest_price = selected_data['Low'].min()
+        highest_volume = selected_data['Volume'].max()
+        lowest_volume = selected_data['Volume'].min()
         
         if price_difference > 0:
             color = "green"
@@ -107,35 +124,52 @@ def info_cards(selected_data, selected_period, financial, selected_symbol):
             color = "red"
             arrow = "▼"
             background_color = "#f8d7da"  # light red
+            
+     
         
         left_column.markdown(
             f"""
             <div style="text-align: left; margin: 0;">
-                <p style="margin: 0; font-size: 20px; line-height: 1.0; margin-bottom: 8px; margin-top: 20px;">Current Price</p>
-                <p style="font-size: 45px; margin: 0; line-height: 1.0; margin-bottom: 10px;">${current_price:.2f}</p>
-                <p style="font-size: 16px; color: {color}; background-color: {background_color}; border-radius: 5px; padding: 2px 5px; display: inline-block; width: auto; margin: 0; margin-bottom: 15px;">
+                <p style="margin: 0; font-size: 20px; line-height: 1.0; margin-bottom: 8px; margin-top: 15px;"> <strong>Current Price</p>
+                <p style="font-size: 40px; margin: 0; line-height: 1.0; margin-bottom: 10px;">${current_price:.2f}</p>
+                <p style="font-size: 16px; color: {color}; background-color: {background_color}; border-radius: 5px; padding: 2px 5px; display: inline-block; width: auto; margin: 0; margin-bottom: 20px;">
                     {arrow} ${price_difference:.2f} ({price_diff_percentage:.2f}%)
                 </p>
-            </div>
+            </div>  
             """,
             unsafe_allow_html=True
-        )
+            )
+        with col2:
+            custom_metric_two("Highest Price", f"${highest_price:,.2f}")
+        
+        with col3:
+            custom_metric_two("Lowest Price", f"${lowest_price:,.2f}")
+            
+        with col4:
+            custom_metric_two("Highest Volume", f"${highest_volume:,.0f}")
+            
+        with col5:
+            custom_metric_two("Lowest Volume", f"${lowest_volume:,.0f}")
+        
+              
 # Function to display the chart
 def display_chart(selected_data, selected_period, financial):
+
     with st.container():
+        # Calculate moving averages on the entire dataset
+        selected_data['MA20'] = selected_data['Close'].rolling(window=20).mean()
+        selected_data['MA50'] = selected_data['Close'].rolling(window=50).mean()
+
+        # Slice the dataset based on the selected period
         selected_data = selected_data.iloc[-mapping_period[selected_period]:]
         selected_data = selected_data.reset_index()  # Reset index to access 'Date' as a column
         financial = financial[financial['Symbol'] == selected_data['Symbol'].iloc[0]]
-    
-        # Calculate moving averages
-        selected_data['MA20'] = selected_data['Close'].rolling(window=20).mean()
-        selected_data['MA50'] = selected_data['Close'].rolling(window=50).mean()
-    
+
         # Create subplots with shared x-axis
         fig = make_subplots(rows=2, cols=1, shared_xaxes=True, 
                             row_heights=[0.8, 0.2], vertical_spacing=0.2,
-                            subplot_titles=('Price Chart', 'Volume Chart'))
-    
+                            subplot_titles=('', 'Volume Chart'))
+
         # Add candlestick chart to the first row
         fig.add_trace(go.Candlestick(
             x=selected_data['Date'],
@@ -143,16 +177,18 @@ def display_chart(selected_data, selected_period, financial):
             high=selected_data['High'],
             low=selected_data['Low'],
             close=selected_data['Close'],
-            name='Candlestick'
+            name='Candlestick',
+            increasing_line_color='green',  
+            decreasing_line_color='red'    
         ), row=1, col=1)
-    
-        # Add moving averages to the first row
-        fig.add_trace(go.Scatter(x=selected_data['Date'], y=selected_data['MA20'], mode='lines', name='MA20'), row=1, col=1)
-        fig.add_trace(go.Scatter(x=selected_data['Date'], y=selected_data['MA50'], mode='lines', name='MA50'), row=1, col=1)
-    
-        # Add volume bar chart to the second row
-        fig.add_trace(go.Bar(x=selected_data['Date'], y=selected_data['Volume'], name='Volume'), row=2, col=1)
-    
+
+        # Add moving averages to the first row with smoother lines
+        fig.add_trace(go.Scatter(x=selected_data['Date'], y=selected_data['MA20'], mode='lines', name='MA20', line_shape='spline', line=dict(color='light blue')), row=1, col=1)
+        fig.add_trace(go.Scatter(x=selected_data['Date'], y=selected_data['MA50'], mode='lines', name='MA50', line_shape='spline', line=dict(color='orange')), row=1, col=1)
+
+        # Add volume bar chart to the second row with custom color
+        fig.add_trace(go.Bar(x=selected_data['Date'], y=selected_data['Volume'], name='Volume', marker_color='violet'), row=2, col=1)
+
         # Set the layout properties for width and height
         fig.update_layout(
             xaxis_title='',  
@@ -160,6 +196,7 @@ def display_chart(selected_data, selected_period, financial):
             height=800,
             margin=dict(t=50, b=50),  
             updatemenus=[{
+                'type': 'buttons',
                 'buttons': [
                     {
                         'label': 'Show MA20',
@@ -182,12 +219,19 @@ def display_chart(selected_data, selected_period, financial):
                         'args': [{'visible': [True, False, False, True]}]
                     }
                 ],
-                'direction': 'down',
-                'showactive': True
+                'direction': 'left',
+                'pad': {'r': 10, 't': 10},
+                'showactive': True,
+                'x': -0.036,
+                'xanchor': 'left',
+                'y': 1.1,
+                'yanchor': 'top'
             }]
         )
-    
+
         st.plotly_chart(fig)
+
+    
 
 # Function to display the financials
 def display_financials(selected_data, valuations):
@@ -215,17 +259,16 @@ def display_financials(selected_data, valuations):
 
 # Main function
 def main():
-    
-        
-    # putting selected symbol and period into variables
+    # Putting selected symbol and period into variables
     selected_symbol, selected_period = filter_symbol_widget()
     selected_data = data[data['Symbol'] == selected_symbol]
-    # display_metrics(selected_data, financial, valuations)
     
+    with open("assets/style.css") as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
     
     header(valuations, selected_data)
     display_metrics(selected_data, financial, valuations)
-    info_cards(selected_data, selected_period, financial, selected_symbol)
+    info_cards(selected_data, selected_period, financial)
     # Filtering the dataframe
     display_chart(selected_data, selected_period, financial)
     display_financials(selected_data, valuations)
