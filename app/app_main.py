@@ -262,9 +262,6 @@ def main():
     selected_symbol, selected_period = filter_symbol_widget()
     selected_data = data[data['Symbol'] == selected_symbol]
     
-    with open("assets/style.css") as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-    
     header(valuations, selected_data)
     display_metrics(selected_data, financial, valuations)
     info_cards(selected_data, selected_period, financial)
