@@ -8,6 +8,7 @@ from plotly.subplots import make_subplots
 # Setting the page configuration
 st.set_page_config(page_title="Stocks Dashboard", page_icon="💹", layout = "wide")
 
+# Loading the data
 data = pd.read_csv("data/candle_data.csv")
 tickers = pd.read_csv("data/tickers_list.csv")
 financial = pd.read_csv("data/financial_data.csv")
@@ -89,17 +90,15 @@ def display_df(selected_data, selected_period, selected_symbol):
     st.subheader(f"**🕓 {selected_symbol} Price Data**")
     with st.container():
         selected_data = selected_data.iloc[-mapping_period[selected_period]:]
-        selected_data = selected_data.reset_index()  # Reset index to access 'Date' as a column
-        selected_data = selected_data.drop(columns=['index'])
+        selected_data = selected_data.reset_index(drop=True)  # Reset index without adding 'index' column
         selected_data = selected_data.sort_values(by='Date', ascending=False)
-        
+        selected_data = selected_data.set_index('Date')  # Set 'Date' column as the index
         
         st.dataframe(selected_data, use_container_width=True)
 
 # Function to display the info cards        
 def info_cards(selected_data, selected_period, financial):
-    # selected_valuation = valuations[valuations['Symbol'] == selected_data['Symbol'].iloc[0]]
-    # st.title(f"{selected_valuation['longName'].iloc[0]}")
+
     with st.container():
         left_column,  col1, col2, col3, col4, col5 = st.columns([1,3,1,1,1,1])
         
@@ -107,6 +106,7 @@ def info_cards(selected_data, selected_period, financial):
         
         financial = financial[financial['Symbol'] == selected_data['Symbol'].iloc[0]]
         
+        # Calculate the price difference and percentage
         current_price = selected_data['Close'].iloc[-1]
         initial_price = selected_data['Close'].iloc[0]
         price_difference = current_price - initial_price
@@ -126,7 +126,7 @@ def info_cards(selected_data, selected_period, financial):
             background_color = "#f8d7da"  # light red
             
      
-        
+        # Display the metrics
         left_column.markdown(
             f"""
             <div style="text-align: left; margin: 0;">
@@ -150,8 +150,7 @@ def info_cards(selected_data, selected_period, financial):
             
         with col5:
             custom_metric_two("Lowest Volume", f"${lowest_volume:,.0f}")
-        
-              
+                
 # Function to display the chart
 def display_chart(selected_data, selected_period, financial):
 
@@ -162,7 +161,7 @@ def display_chart(selected_data, selected_period, financial):
 
         # Slice the dataset based on the selected period
         selected_data = selected_data.iloc[-mapping_period[selected_period]:]
-        selected_data = selected_data.reset_index()  # Reset index to access 'Date' as a column
+        selected_data = selected_data.reset_index()  
         financial = financial[financial['Symbol'] == selected_data['Symbol'].iloc[0]]
 
         # Create subplots with shared x-axis
@@ -182,14 +181,14 @@ def display_chart(selected_data, selected_period, financial):
             decreasing_line_color='red'    
         ), row=1, col=1)
 
-        # Add moving averages to the first row with smoother lines
+        # Add moving averages to the first row
         fig.add_trace(go.Scatter(x=selected_data['Date'], y=selected_data['MA20'], mode='lines', name='MA20', line_shape='spline', line=dict(color='light blue')), row=1, col=1)
         fig.add_trace(go.Scatter(x=selected_data['Date'], y=selected_data['MA50'], mode='lines', name='MA50', line_shape='spline', line=dict(color='orange')), row=1, col=1)
 
-        # Add volume bar chart to the second row with custom color
+        # Add volume bar chart to the second row
         fig.add_trace(go.Bar(x=selected_data['Date'], y=selected_data['Volume'], name='Volume', marker_color='violet'), row=2, col=1)
 
-        # Set the layout properties for width and height
+        # Set the layout properties
         fig.update_layout(
             xaxis_title='',  
             yaxis_title='Price',
