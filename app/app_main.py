@@ -90,9 +90,9 @@ def display_df(selected_data, selected_period, selected_symbol):
     st.subheader(f"**🕓 {selected_symbol} Price Data**")
     with st.container():
         selected_data = selected_data.iloc[-mapping_period[selected_period]:]
-        selected_data = selected_data.reset_index(drop=True)  # Reset index without adding 'index' column
+        selected_data = selected_data.reset_index(drop=True)  
         selected_data = selected_data.sort_values(by='Date', ascending=False)
-        selected_data = selected_data.set_index('Date')  # Set 'Date' column as the index
+        selected_data = selected_data.set_index('Date')  
         
         st.dataframe(selected_data, use_container_width=True)
 
