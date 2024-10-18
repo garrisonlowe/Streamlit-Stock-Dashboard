@@ -5,6 +5,9 @@ import plotly.io as pio
 from itertools import islice
 from plotly.subplots import make_subplots
 
+# Setting the page configuration
+st.set_page_config(page_title="Stocks Dashboard", page_icon="💹", layout = "wide")
+
 data = pd.read_csv("data/candle_data.csv")
 tickers = pd.read_csv("data/tickers_list.csv")
 financial = pd.read_csv("data/financial_data.csv")
@@ -14,16 +17,15 @@ valuations = pd.read_csv("data/valuations_data.csv")
 symbols = data['Symbol'].unique()
 symbols = symbols.tolist()
 
-st.set_page_config(page_title="Stocks Dashboard", page_icon="💹", layout = "wide")
-# st.html("styles.html")
-pio.templates.default = "plotly_white"
-
+# Mapping period to number of days
 mapping_period = {"1D": 1, "1M": 21, "3M": 64, "6M": 128, "1Y": 260, "2Y": 518, "5Y": 1296}
 
+# Function to display the header
 def header(valuations, selected_data):
     selected_valuation = valuations[valuations['Symbol'] == selected_data['Symbol'].iloc[0]]
     st.title(f"{selected_valuation['longName'].iloc[0]}")
 
+# Function to filter the symbol and period
 def filter_symbol_widget():
     with st.sidebar:
         st.title ("📈 Stock Dashboard App")
@@ -32,6 +34,7 @@ def filter_symbol_widget():
     
     return selected_symbol, selected_period
 
+# Function to define the style of the metrics
 def custom_metric(label, value):
     st.markdown(
         f"""
@@ -43,6 +46,7 @@ def custom_metric(label, value):
         unsafe_allow_html=True
     )
 
+# Function to display the metrics
 def display_metrics(selected_data, financial, valuations):
     with st.sidebar:
         # Create a single column for metrics
@@ -67,7 +71,7 @@ def display_metrics(selected_data, financial, valuations):
         custom_metric("Operating Income", f"${selected_financial['Operating Income'].iloc[0]:,.0f}")
         custom_metric("Gross Profit", f"${selected_financial['Gross Profit'].iloc[0]:,.0f}")
         
-
+# Function to display the dataframe
 def display_df(selected_data, selected_period, selected_symbol):
     st.subheader(f"**🕓 {selected_symbol} Price Data**")
     with st.container():
@@ -78,7 +82,8 @@ def display_df(selected_data, selected_period, selected_symbol):
         
         
         st.dataframe(selected_data, use_container_width=True)
-        
+
+# Function to display the info cards        
 def info_cards(selected_data, selected_period, financial, selected_symbol):
     # selected_valuation = valuations[valuations['Symbol'] == selected_data['Symbol'].iloc[0]]
     # st.title(f"{selected_valuation['longName'].iloc[0]}")
@@ -115,7 +120,7 @@ def info_cards(selected_data, selected_period, financial, selected_symbol):
             """,
             unsafe_allow_html=True
         )
-
+# Function to display the chart
 def display_chart(selected_data, selected_period, financial):
     with st.container():
         selected_data = selected_data.iloc[-mapping_period[selected_period]:]
@@ -183,7 +188,8 @@ def display_chart(selected_data, selected_period, financial):
         )
     
         st.plotly_chart(fig)
-    
+
+# Function to display the financials
 def display_financials(selected_data, valuations):
     with st.container():
         selected_valuation = valuations[valuations['Symbol'] == selected_data['Symbol'].iloc[0]]
@@ -207,12 +213,16 @@ def display_financials(selected_data, valuations):
             col = cols[i % 5]
             col.metric(label, value)
 
-
+# Main function
 def main():
+    
+        
     # putting selected symbol and period into variables
     selected_symbol, selected_period = filter_symbol_widget()
     selected_data = data[data['Symbol'] == selected_symbol]
     # display_metrics(selected_data, financial, valuations)
+    
+    
     header(valuations, selected_data)
     display_metrics(selected_data, financial, valuations)
     info_cards(selected_data, selected_period, financial, selected_symbol)
@@ -221,8 +231,6 @@ def main():
     display_financials(selected_data, valuations)
     display_df(selected_data, selected_period, selected_symbol)
     
-    
-   
-
+# Running the main function
 if __name__ == "__main__":
     main()
