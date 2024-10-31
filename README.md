@@ -390,3 +390,115 @@ def display_metrics(selected_data, financial, valuations):
         custom_metric("Operating Income", f"${selected_financial['Operating Income'].iloc[0]:,.0f}")
         custom_metric("Gross Profit", f"${selected_financial['Gross Profit'].iloc[0]:,.0f}")
 ```
+### Function: `display_chart`
+
+The `display_chart` function visualizes financial data using Streamlit and Plotly. It includes candlestick charts, moving averages, and volume charts.
+
+#### Parameters:
+- `selected_data` (DataFrame): A DataFrame containing data for the selected stock.
+- `selected_period` (str): A string representing the selected period for slicing the data.
+- `financial` (DataFrame): A DataFrame containing financial data for various stocks.
+
+#### Process:
+1. **Calculate Moving Averages**:
+   - Computes 20-day (`MA20`) and 50-day (`MA50`) moving averages for the `Close` prices.
+
+2. **Slice Data**:
+   - Slices the dataset based on the selected period.
+   - Resets the index of the sliced data.
+   - Filters the financial data for the symbol present in the selected data.
+
+3. **Create Subplots**:
+   - Creates subplots with shared x-axis for the candlestick chart and volume chart.
+
+4. **Add Traces**:
+   - Adds a candlestick chart to the first row.
+   - Adds moving averages (`MA20` and `MA50`) to the first row.
+   - Adds a volume bar chart to the second row.
+
+5. **Update Layout**:
+   - Updates the layout with buttons to toggle the visibility of moving averages.
+   - Configures layout properties such as axis titles, height, and margins.
+
+6. **Display Chart**:
+   - Uses `st.plotly_chart` to render the chart in Streamlit.
+
+#### Code:
+```python
+def display_chart(selected_data, selected_period, financial):
+    with st.container():
+        # Calculate moving averages on the entire dataset
+        selected_data['MA20'] = selected_data['Close'].rolling(window=20).mean()
+        selected_data['MA50'] = selected_data['Close'].rolling(window=50).mean()
+
+        # Slice the dataset based on the selected period
+        selected_data = selected_data.iloc[-mapping_period[selected_period]:]
+        selected_data = selected_data.reset_index()  
+        financial = financial[financial['Symbol'] == selected_data['Symbol'].iloc[0]]
+
+        # Create subplots with shared x-axis
+        fig = make_subplots(rows=2, cols=1, shared_xaxes=True, 
+                            row_heights=[0.8, 0.2], vertical_spacing=0.2,
+                            subplot_titles=('', 'Volume Chart'))
+
+        # Add candlestick chart to the first row
+        fig.add_trace(go.Candlestick(
+            x=selected_data['Date'],
+            open=selected_data['Open'],
+            high=selected_data['High'],
+            low=selected_data['Low'],
+            close=selected_data['Close'],
+            name='Candlestick',
+            increasing_line_color='green',  
+            decreasing_line_color='red'    
+        ), row=1, col=1)
+
+        # Add moving averages to the first row
+        fig.add_trace(go.Scatter(x=selected_data['Date'], y=selected_data['MA20'], mode='lines', name='MA20', line_shape='spline', line=dict(color='light blue')), row=1, col=1)
+        fig.add_trace(go.Scatter(x=selected_data['Date'], y=selected_data['MA50'], mode='lines', name='MA50', line_shape='spline', line=dict(color='orange')), row=1, col=1)
+
+        # Add volume bar chart to the second row
+        fig.add_trace(go.Bar(x=selected_data['Date'], y=selected_data['Volume'], name='Volume', marker_color='violet'), row=2, col=1)
+
+        # Set the layout properties
+        fig.update_layout(
+            xaxis_title='',  
+            yaxis_title='Price',
+            height=800,
+            margin=dict(t=50, b=50),  
+            updatemenus=[{
+                'type': 'buttons',
+                'buttons': [
+                    {
+                        'label': 'Show MA20',
+                        'method': 'update',
+                        'args': [{'visible': [True, True, False, True]}]
+                    },
+                    {
+                        'label': 'Show MA50',
+                        'method': 'update',
+                        'args': [{'visible': [True, False, True, True]}]
+                    },
+                    {
+                        'label': 'Show Both',
+                        'method': 'update',
+                        'args': [{'visible': [True, True, True, True]}]
+                    },
+                    {
+                        'label': 'Hide All',
+                        'method': 'update',
+                        'args': [{'visible': [True, False, False, True]}]
+                    }
+                ],
+                'direction': 'left',
+                'pad': {'r': 10, 't': 10},
+                'showactive': True,
+                'x': -0.036,
+                'xanchor': 'left',
+                'y': 1.1,
+                'yanchor': 'top'
+            }]
+        )
+
+        st.plotly_chart(fig)
+```
