@@ -1,8 +1,17 @@
 # Streamlit Stock Dashboard
  
-A Streamlit application that uses the yFinance API to gather data and visualize stock market data, including price, volume, and moving averages. The app also includes a sidebar for user input to select the stock symbol, date range, and moving average period.
+A Streamlit application that leverages the yFinance API to fetch and visualize stock market data. The app displays key metrics such as price, volume, and moving averages. It features a user-friendly sidebar for selecting the stock symbol, date range, and moving average period.
 
 [Try it out here!](https://app-stock-dashboard-rcf3kwydlx5knj9njeumpz.streamlit.app)
+
+**Key Features:**
+- Fetches real-time stock data using the yFinance API.
+- Visualizes stock price, volume, and moving averages.
+- Interactive sidebar for user input:
+    - Select stock symbol.
+    - Choose date range.
+    - Set moving average period.
+
 
 ## Data Scraping and Preparation
 
@@ -502,3 +511,57 @@ def display_chart(selected_data, selected_period, financial):
 
         st.plotly_chart(fig)
 ```
+
+### Function: `display_financials`
+
+The `display_financials` function displays various financial metrics for a selected stock symbol using Streamlit.
+
+#### Parameters:
+- `selected_data` (DataFrame): A DataFrame containing data for the selected stock.
+- `valuations` (DataFrame): A DataFrame containing valuation data for various stocks.
+
+#### Process:
+1. Creates a container in the Streamlit app to display the metrics.
+2. Filters the `valuations` DataFrame to get data for the selected stock symbol.
+3. Displays a subheader with the stock symbol.
+4. Defines a list of financial metrics to display:
+   - Price-to-Book Ratio
+   - Debt-to-Equity Ratio
+   - PEG Ratio
+   - Quick Ratio
+   - Current Ratio
+   - Trailing PE
+   - Forward PE
+   - Revenue Per Share
+   - Return On Equity
+   - Enterprise value to EBIT
+5. Creates columns in the Streamlit app to display the metrics.
+6. Iterates over the metrics and displays each one in the appropriate column.
+
+#### Code:
+```python
+def display_financials(selected_data, valuations):
+    with st.container():
+        selected_valuation = valuations[valuations['Symbol'] == selected_data['Symbol'].iloc[0]]
+        st.subheader(f"📊 {selected_data['Symbol'].iloc[0]} Metrics")
+        metrics = [
+            ("💲Price-to-Book Ratio", f"{selected_valuation['priceToBook'].iloc[0]:.2f}"),
+            ("💲Debt-to-Equity Ratio", f"{selected_valuation['debtToEquity'].iloc[0]:.2f}"),
+            ("💲PEG Ratio", f"{selected_valuation['pegRatio'].iloc[0]:.2f}"),
+            ("💲Quick Ratio", f"{selected_valuation['quickRatio'].iloc[0]:.2f}"),
+            ("💲Current Ratio", f"{selected_valuation['currentRatio'].iloc[0]:.2f}"),
+            ("🔎Trailing PE", f"{selected_valuation['trailingPE'].iloc[0]:.2f}"),
+            ("🔎Forward PE", f"{selected_valuation['forwardPE'].iloc[0]:.2f}"),
+            ("🔎Revenue Per Share", f"${selected_valuation['revenuePerShare'].iloc[0]:.2f}"),
+            ("🔎Return On Equity", f"{selected_valuation['returnOnEquity'].iloc[0]:.2f}"),
+            ("🔎Enterprise value to EBIT", f"{selected_valuation['enterpriseToEbitda'].iloc[0]:.2f}"),
+        ]
+        
+        cols = st.columns(5)
+        for i, (label, value) in enumerate(metrics):
+            col = cols[i % 5]
+            col.metric(label, value)
+```
+## Final Pictures
+![alt text](image-1.png)
+![alt text](image-2.png)
